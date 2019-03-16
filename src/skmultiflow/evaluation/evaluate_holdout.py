@@ -148,9 +148,13 @@ class EvaluateHoldout(StreamEvaluator):
                  show_plot=False,
                  restart_stream=True,
                  test_size=5000,
-                 dynamic_test_set=False):
+                 dynamic_test_set=False,
+                 metric_listeners=None):
 
         super().__init__()
+        if metric_listeners is None:
+            metric_listeners = []
+        self.metric_listeners = metric_listeners
         self._method = 'holdout'
         self.n_wait = n_wait
         self.max_samples = max_samples
@@ -201,13 +205,12 @@ class EvaluateHoldout(StreamEvaluator):
             self._reset_globals()
             # Initialize metrics and outputs (plots, log files, ...)
             self._init_metrics()
-            self._init_plot()
             self._init_file()
 
             self.model = self._periodic_holdout()
 
             if self.show_plot:
-                self.visualizer.hold()
+                self.metric_listeners.hold()
 
             return self.model
 

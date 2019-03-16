@@ -5,7 +5,6 @@ from timeit import default_timer as timer
 from skmultiflow.core.base_object import BaseObject
 from skmultiflow.data.base_stream import Stream
 from .evaluation_data_buffer import EvaluationDataBuffer
-from skmultiflow.visualization.evaluation_visualizer import EvaluationVisualizer
 from skmultiflow.metrics import WindowClassificationMeasurements, ClassificationMeasurements, \
     MultiTargetClassificationMeasurements, WindowMultiTargetClassificationMeasurements, RegressionMeasurements, \
     WindowRegressionMeasurements, MultiTargetRegressionMeasurements, \
@@ -63,7 +62,7 @@ class StreamEvaluator(BaseObject, metaclass=ABCMeta):
         self._start_time = -1
         self._end_time = -1
 
-        self.visualizer = None
+        self.metric_listeners = []
         self.n_sliding = 0
         self.global_sample_count = 0
 
@@ -477,8 +476,9 @@ class StreamEvaluator(BaseObject, metaclass=ABCMeta):
     def _update_outputs(self, sample_id):
         """ Update outputs of the evaluation. """
         self._update_file()
-        if self.visualizer is not None and self.show_plot:
-            self.visualizer.on_new_train_step(sample_id, self._data_buffer)
+        if self.metric_listeners:
+            for listener in self.metric_listeners:
+                listener.listen(sample_id=sample_id, metrics_data=self._data_buffer.data)
 
     def _init_file(self):
         if self.output_file is not None:
@@ -573,19 +573,6 @@ class StreamEvaluator(BaseObject, metaclass=ABCMeta):
                 f.write(self._file_buffer)
             self._file_buffer = ''
             self._file_buffer_size = 0
-
-    def _init_plot(self):
-        """ Initialize plot to display the evaluation results.
-
-        """
-        if self.show_plot:
-            self.visualizer = EvaluationVisualizer(task_type=self._task_type,
-                                                   n_wait=self.n_sliding,
-                                                   dataset_name=self.stream.get_data_info(),
-                                                   metrics=self.metrics,
-                                                   n_models=self.n_models,
-                                                   model_names=self.model_names,
-                                                   data_dict=self._data_dict)
 
     def _reset_globals(self):
         self.global_sample_count = 0
