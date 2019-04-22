@@ -68,7 +68,7 @@ class LearnNSE(StreamModel):
 
     def __fit(self, estimator, X, y, classes=None):
         try:
-            estimator.fit(X, y, classes=classes)
+            estimator.fit(X, y)
         except (NotImplementedError, TypeError):
             estimator.partial_fit(X, y, classes=classes)
 
@@ -256,7 +256,9 @@ class LearnNSE(StreamModel):
         """
 
         votes = self.predict_proba(X)
-        return np.argmax(votes, axis=1)
+        selected_classes_indices = np.argmax(votes, axis=1)
+
+        return np.array([self.classes[idx] for idx in selected_classes_indices])
 
     def score(self, X, y):
         raise NotImplementedError
